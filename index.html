@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RO Churching Attendance — Aloran & Oroquieta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  </style>
+</head>
+<body class="text-slate-800 pb-28">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-lg sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-blue-950 text-xs font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Nov 21–22</span>
+            <span id="syncBadge" class="text-xs bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Live Sync Active
+            </span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight mt-1">RO Churching: Aloran & Oroquieta</h1>
+          <p class="text-xs text-blue-200">Click <strong class="text-white">AMEN</strong> beside your name to confirm • Offering: <strong class="text-amber-300">₱500</strong></p>
+        </div>
+
+        <button onclick="openPasteModal()" class="bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+          <span>📋</span> Paste GC Update
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 pt-5 space-y-5">
+
+    <!-- Live Dashboard -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Confirmed</span>
+          <span class="text-lg">✅</span>
+        </div>
+        <div class="mt-1 flex items-baseline gap-1.5">
+          <span id="statConfirmed" class="text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+          <span id="statTotalListed" class="text-xs font-medium text-slate-400">/ 38</span>
+        </div>
+        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="confirmBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-600">Pending</span>
+          <span class="text-lg">⏳</span>
+        </div>
+        <div class="mt-1">
+          <span id="statPending" class="text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1.5">Waiting for AMEN</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Vacant Slots</span>
+          <span class="text-lg">🪑</span>
+        </div>
+        <div class="mt-1">
+          <span id="statVacant" class="text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+        </div>
+        <p id="vacantNumbersText" class="text-[11px] text-slate-400 mt-1.5 truncate">Slots #34, #36, #39</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-600">Offerings (₱500)</span>
+          <span class="text-lg">💰</span>
+        </div>
+        <div class="mt-1">
+          <span id="statCollected" class="text-2xl sm:text-3xl font-extrabold text-blue-700">₱0</span>
+        </div>
+        <p id="statExpected" class="text-[11px] text-slate-400 mt-1.5">Target: ₱0 (0 confirmed)</p>
+      </div>
+    </section>
+
+    <!-- Search & Filter -->
+    <section class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+      <div class="relative flex-1">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+        <input id="searchInput" type="text" oninput="renderList()" placeholder="Search brother's name or number..."
+          class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-900 text-white">All (41)</button>
+        <button onclick="setFilter('confirmed')" id="filter-confirmed" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">AMEN</button>
+        <button onclick="setFilter('pending')" id="filter-pending" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Pending</button>
+        <button onclick="setFilter('vacant')" id="filter-vacant" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Vacant</button>
+      </div>
+    </section>
+
+    <!-- Roster List -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <span># & Brother's Name (Tap name to edit)</span>
+        <span>Status & Offering</span>
+      </div>
+      <div id="rosterContainer" class="divide-y divide-slate-100"></div>
+    </section>
+
+    <p class="text-center text-xs text-slate-400">
+      "Kani lang sa 41 brothers nga nalista. Unya na ta magdugang if naay mobackout."
+    </p>
+  </main>
+
+  <!-- Sticky Bottom Bar for Messenger Sharing -->
+  <div class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 p-3 z-30 shadow-lg">
+    <div class="max-w-4xl mx-auto flex items-center gap-2">
+      <button onclick="copyForMessenger('full')" class="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2">
+        <span>💬</span> Copy Full List for Messenger
+      </button>
+      <button onclick="copyForMessenger('summary')" class="bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-1.5">
+        <span>📊</span> Summary
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit Name Modal -->
+  <div id="editModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="editModalTitle" class="font-bold text-base text-slate-900">Edit Slot #1</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Brother's Name (leave blank for Vacant)</label>
+          <input id="editNameInput" type="text" placeholder="Enter full name..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Role / Note (optional, e.g. DRIVER)</label>
+          <input id="editNoteInput" type="text" placeholder="e.g. DRIVER" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeEditModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="saveEditModal()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paste GC Update Modal -->
+  <div id="pasteModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900">Paste Updated List from Messenger</h3>
+        <button onclick="closePasteModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-500">Paste the copied message from your Facebook Group Chat below. Any brother with <strong>AMEN</strong> beside their name will automatically be marked confirmed.</p>
+      <textarea id="pasteTextarea" rows="7" placeholder="Paste Messenger list here..." class="w-full p-3 border border-slate-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+      <div class="flex justify-end gap-2">
+        <button onclick="closePasteModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="processPastedList()" class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700">Sync AMENs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+    Copied to clipboard!
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. PASTE YOUR FIREBASE REALTIME DATABASE URL BELOW (No trailing slash)
+    // Example: "https://ro-churching-default-rtdb.asia-southeast1.firebasedatabase.app"
+    // =========================================================================
+    const FIREBASE_DB_URL = "YOUR_FIREBASE_DATABASE_URL";
+
+    const DEFAULT_ROSTER = [
+      { id: 1, name: "Dante Remocaldo", confirmed: true, paid: false, note: "" },
+      { id: 2, name: "Dodong Bastillada", confirmed: false, paid: false, note: "" },
+      { id: 3, name: "Franz Vilan", confirmed: false, paid: false, note: "" },
+      { id: 4, name: "Joel Tabanao", confirmed: true, paid: false, note: "" },
+      { id: 5, name: "Nerio Pones", confirmed: true, paid: false, note: "" },
+      { id: 6, name: "Cris Docor", confirmed: true, paid: false, note: "" },
+      { id: 7, name: "Ephraim Lina", confirmed: true, paid: false, note: "" },
+      { id: 8, name: "Hans Young Uy", confirmed: true, paid: false, note: "" },
+      { id: 9, name: "Jay Nale", confirmed: true, paid: false, note: "" },
+      { id: 10, name: "Rolando Escandallo", confirmed: true, paid: false, note: "" },
+      { id: 11, name: "Jefferson Fabe", confirmed: true, paid: false, note: "" },
+      { id: 12, name: "Jemeser Clavite", confirmed: true, paid: false, note: "" },
+      { id: 13, name: "Josue Beloy", confirmed: false, paid: false, note: "" },
+      { id: 14, name: "Monching Paran", confirmed: true, paid: false, note: "" },
+      { id: 15, name: "Ricky Wenceslao", confirmed: false, paid: false, note: "" },
+      { id: 16, name: "Rico Lugatiman", confirmed: false, paid: false, note: "" },
+      { id: 17, name: "Julito Calago", confirmed: false, paid: false, note: "" },
+      { id: 18, name: "Ernaldo Retuertas", confirmed: true, paid: false, note: "" },
+      { id: 19, name: "Mario Narita", confirmed: true, paid: false, note: "" },
+      { id: 20, name: "Nestor Cabacang", confirmed: true, paid: false, note: "" },
+      { id: 21, name: "Philip Tunay", confirmed: false, paid: false, note: "" },
+      { id: 22, name: "Reignlife Satera", confirmed: true, paid: false, note: "" },
+      { id: 23, name: "Rodrigo Generalao", confirmed: true, paid: false, note: "" },
+      { id: 24, name: "Rene Morre", confirmed: true, paid: false, note: "" },
+      { id: 25, name: "Aldrin Cayod-ong", confirmed: true, paid: false, note: "" },
+      { id: 26, name: "Cipred Manginsay", confirmed: true, paid: false, note: "" },
+      { id: 27, name: "Virgilio Sumagang Jr.", confirmed: true, paid: false, note: "" },
+      { id: 28, name: "Eduardo Librado", confirmed: false, paid: false, note: "" },
+      { id: 29, name: "Elnathan Jungao", confirmed: true, paid: false, note: "" },
+      { id: 30, name: "Iquin Galceran", confirmed: true, paid: false, note: "" },
+      { id: 31, name: "Joel Tahud", confirmed: false, paid: false, note: "" },
+      { id: 32, name: "Rino Malaque", confirmed: true, paid: false, note: "" },
+      { id: 33, name: "AJ Sudaria", confirmed: true, paid: false, note: "" },
+      { id: 34, name: "", confirmed: false, paid: false, note: "" },
+      { id: 35, name: "Francis Maghanoy", confirmed: true, paid: false, note: "" },
+      { id: 36, name: "", confirmed: false, paid: false, note: "" },
+      { id: 37, name: "Jofie Agbay", confirmed: true, paid: false, note: "" },
+      { id: 38, name: "Arcenio Daligdig", confirmed: true, paid: false, note: "" },
+      { id: 39, name: "", confirmed: false, paid: false, note: "" },
+      { id: 40, name: "Tomas Estenzo", confirmed: false, paid: false, note: "" },
+      { id: 41, name: "Gagang Vente", confirmed: true, paid: false, note: "DRIVER" }
+    ];
+
+    let roster = JSON.parse(JSON.stringify(DEFAULT_ROSTER));
+    let currentFilter = "all";
+    let editingId = null;
+    const isFirebaseConfigured = FIREBASE_DB_URL.startsWith("https://iligan-ro-churching-default-rtdb.asia-southeast1.firebasedatabase.app/");
+
+    async function initApp() {
+      if (!isFirebaseConfigured) {
+        document.getElementById("syncBadge").innerHTML = "⚠️ Local Mode (Add Firebase URL)";
+        document.getElementById("syncBadge").className = "text-xs bg-amber-500/20 border border-amber-400/40 text-amber-200 px-2.5 py-0.5 rounded-full font-medium";
+        const saved = localStorage.getItem("ro_churching_roster");
+        if (saved) roster = JSON.parse(saved);
+        renderAll();
+        return;
+      }
+
+      await fetchFromCloud();
+      // Poll every 4 seconds so everyone sees live updates automatically
+      setInterval(fetchFromCloud, 4000);
+    }
+
+    async function fetchFromCloud() {
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/roster.json`);
+        const data = await res.json();
+        if (data && Array.isArray(data)) {
+          roster = data;
+        } else if (data && typeof data === "object") {
+          roster = DEFAULT_ROSTER.map(item => data[item.id] ? { ...item, ...data[item.id] } : item);
+        } else {
+          // Initialize database with the 41 brothers on first run
+          await saveAllToCloud();
+        }
+        renderAll();
+      } catch (err) {
+        console.error("Cloud sync error:", err);
+      }
+    }
+
+    async function saveSlotToCloud(slot) {
+      renderAll();
+      if (!isFirebaseConfigured) {
+        localStorage.setItem("ro_churching_roster", JSON.stringify(roster));
+        return;
+      }
+      try {
+        await fetch(`${FIREBASE_DB_URL}/roster/${slot.id}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(slot)
+        });
+      } catch (err) {
+        showToast("⚠️ Network error saving update");
+      }
+    }
+
+    async function saveAllToCloud() {
+      renderAll();
+      if (!isFirebaseConfigured) {
+        localStorage.setItem("ro_churching_roster", JSON.stringify(roster));
+        return;
+      }
+      const keyed = {};
+      roster.forEach(item => { keyed[item.id] = item; });
+      await fetch(`${FIREBASE_DB_URL}/roster.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(keyed)
+      });
+    }
+
+    function toggleAmen(id) {
+      const slot = roster.find(r => r.id === id);
+      if (!slot || !slot.name.trim()) return;
+      slot.confirmed = !slot.confirmed;
+      saveSlotToCloud(slot);
+      showToast(slot.confirmed ? `✅ ${slot.name} — AMEN!` : `⏳ ${slot.name} set to Pending`);
+    }
+
+    function togglePaid(id) {
+      const slot = roster.find(r => r.id === id);
+      if (!slot || !slot.name.trim()) return;
+      slot.paid = !slot.paid;
+      saveSlotToCloud(slot);
+      showToast(slot.paid ? `💰 ₱500 Paid: ${slot.name}` : `Unmarked ₱500: ${slot.name}`);
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.className = "filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200";
+      });
+      document.getElementById(`filter-${filter}`).className = "filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-900 text-white";
+      renderList();
+    }
+
+    function renderAll() {
+      updateDashboard();
+      renderList();
+    }
+
+    function updateDashboard() {
+      const named = roster.filter(r => r.name && r.name.trim() !== "");
+      const confirmed = named.filter(r => r.confirmed);
+      const pending = named.filter(r => !r.confirmed);
+      const vacant = roster.filter(r => !r.name || r.name.trim() === "");
+      const paidCount = named.filter(r => r.paid).length;
+
+      document.getElementById("statConfirmed").textContent = confirmed.length;
+      document.getElementById("statTotalListed").textContent = `/ ${named.length}`;
+      const pct = named.length ? Math.round((confirmed.length / named.length) * 100) : 0;
+      document.getElementById("confirmBar").style.width = `${pct}%`;
+
+      document.getElementById("statPending").textContent = pending.length;
+      document.getElementById("statVacant").textContent = vacant.length;
+      document.getElementById("vacantNumbersText").textContent = vacant.length
+        ? `Slots ${vacant.map(v => "#" + v.id).join(", ")}`
+        : "No vacant slots";
+
+      const collected = paidCount * 500;
+      const expected = confirmed.length * 500;
+      document.getElementById("statCollected").textContent = `₱${collected.toLocaleString()}`;
+      document.getElementById("statExpected").textContent = `Target: ₱${expected.toLocaleString()} (${confirmed.length} AMEN)`;
+    }
+
+    function renderList() {
+      const query = document.getElementById("searchInput").value.toLowerCase().trim();
+      const container = document.getElementById("rosterContainer");
+
+      const filtered = roster.filter(item => {
+        const isVacant = !item.name || item.name.trim() === "";
+        if (currentFilter === "confirmed" && (!item.confirmed || isVacant)) return false;
+        if (currentFilter === "pending" && (item.confirmed || isVacant)) return false;
+        if (currentFilter === "vacant" && !isVacant) return false;
+
+        if (query) {
+          const matchName = item.name.toLowerCase().includes(query);
+          const matchId = String(item.id) === query;
+          const matchNote = (item.note || "").toLowerCase().includes(query);
+          return matchName || matchId || matchNote;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-400">No brothers match your search/filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isVacant = !item.name || item.name.trim() === "";
+        if (isVacant) {
+          return `
+            <div class="px-4 py-3 flex items-center justify-between bg-slate-50/70">
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-lg bg-slate-200 text-slate-500 text-xs font-bold flex items-center justify-center">${item.id}</span>
+                <span class="text-sm italic text-slate-400">Bakante / Vacant Slot</span>
+              </div>
+              <button onclick="openEditModal(${item.id})" class="text-xs font-semibold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                + Add Brother
+              </button>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="px-4 py-3 flex items-center justify-between gap-2 hover:bg-slate-50 transition">
+            <div onclick="openEditModal(${item.id})" class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group">
+              <span class="w-7 h-7 shrink-0 rounded-lg ${item.confirmed ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'} text-xs font-extrabold flex items-center justify-center">
+                ${item.id}
+              </span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-sm font-bold text-slate-800 group-hover:text-blue-700 truncate">${escapeHtml(item.name)}</span>
+                  ${item.note ? `<span class="text-[10px] font-extrabold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase">${escapeHtml(item.note)}</span>` : ""}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="togglePaid(${item.id})" title="Toggle ₱500 Offering Paid"
+                class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${
+                  item.paid
+                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
+                }">
+                ${item.paid ? '₱500 ✓' : '₱500'}
+              </button>
+
+              <button onclick="toggleAmen(${item.id})"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold tracking-wide transition shadow-sm ${
+                  item.confirmed
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                }">
+                ${item.confirmed ? 'AMEN ✓' : 'AMEN?'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function openEditModal(id) {
+      const slot = roster.find(r => r.id === id);
+      if (!slot) return;
+      editingId = id;
+      document.getElementById("editModalTitle").textContent = `Edit Slot #${id}`;
+      document.getElementById("editNameInput").value = slot.name || "";
+      document.getElementById("editNoteInput").value = slot.note || "";
+      document.getElementById("editModal").classList.remove("hidden");
+      document.getElementById("editModal").classList.add("flex");
+    }
+
+    function closeEditModal() {
+      document.getElementById("editModal").classList.add("hidden");
+      document.getElementById("editModal").classList.remove("flex");
+      editingId = null;
+    }
+
+    function saveEditModal() {
+      if (editingId === null) return;
+      const slot = roster.find(r => r.id === editingId);
+      slot.name = document.getElementById("editNameInput").value.trim();
+      slot.note = document.getElementById("editNoteInput").value.trim();
+      if (!slot.name) {
+        slot.confirmed = false;
+        slot.paid = false;
+      }
+      saveSlotToCloud(slot);
+      closeEditModal();
+      showToast("✅ Slot updated!");
+    }
+
+    function openPasteModal() {
+      document.getElementById("pasteTextarea").value = "";
+      document.getElementById("pasteModal").classList.remove("hidden");
+      document.getElementById("pasteModal").classList.add("flex");
+    }
+
+    function closePasteModal() {
+      document.getElementById("pasteModal").classList.add("hidden");
+      document.getElementById("pasteModal").classList.remove("flex");
+    }
+
+    function processPastedList() {
+      const text = document.getElementById("pasteTextarea").value;
+      if (!text.trim()) return;
+      const lines = text.split("\n");
+      let updatedCount = 0;
+
+      lines.forEach(line => {
+        const match = line.match(/^\s*(\d+)[\.\)]\s*(.+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const content = match[2];
+          // Match AMEN including accented variants like ÅMĚŇ
+          const normalized = content.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const hasAmen = /\bamen\b/i.test(normalized);
+          const slot = roster.find(r => r.id === num);
+          if (slot && slot.name && hasAmen && !slot.confirmed) {
+            slot.confirmed = true;
+            updatedCount++;
+          }
+        }
+      });
+
+      saveAllToCloud();
+      closePasteModal();
+      showToast(`✅ Synced ${updatedCount} new AMEN(s)!`);
+    }
+
+    function copyForMessenger(type) {
+      const named = roster.filter(r => r.name && r.name.trim() !== "");
+      const confirmed = named.filter(r => r.confirmed);
+      const pending = named.filter(r => !r.confirmed);
+      const paidCount = named.filter(r => r.paid).length;
+      const pageUrl = window.location.href;
+
+      let text = "";
+      if (type === "summary") {
+        text = `📊 *RO CHURCHING UPDATE (Nov 21-22)*\n` +
+               `✅ Confirmed (AMEN): ${confirmed.length} / ${named.length}\n` +
+               `⏳ Pending: ${pending.length}\n` +
+               `💰 Offerings Collected: ₱${(paidCount * 500).toLocaleString()} / ₱${(confirmed.length * 500).toLocaleString()}\n\n` +
+               `👉 Click AMEN online here:\n${pageUrl}`;
+      } else {
+        const listLines = roster.map(r => {
+          if (!r.name || !r.name.trim()) return `${r.id}.`;
+          const amenTag = r.confirmed ? " - AMEN" : "";
+          const paidTag = r.paid ? " (₱500 PAID)" : "";
+          const noteTag = r.note ? ` (${r.note})` : "";
+          return `${r.id}. ${r.name}${amenTag}${paidTag}${noteTag}`;
+        }).join("\n");
+
+        text = `LIST OF ROs NGA MOKUYOG SA CHURCHING SA ALORAN AND OROQUIETA (November 21-22)\n\n` +
+               `Ang confirm nga mokuyog palihog click sa link o butangi og AMEN tupad sa inyong pangalan:\n` +
+               `👉 ${pageUrl}\n\n` +
+               `CONTRIBUTION for OFFERINGS: P 500.\n` +
+               `✅ Confirmed: ${confirmed.length}/${named.length} | ⏳ Pending: ${pending.length}\n\n` +
+               `${listLines}\n\n` +
+               `Kani lang sa 41 brothers nga nalista. Unya na ta magdugang if naay mobackout.`;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("📋 Copied! Ready to paste in Messenger");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.remove("opacity-0");
+      setTimeout(() => toast.classList.add("opacity-0"), 2500);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
